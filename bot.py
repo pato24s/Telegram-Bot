@@ -25,10 +25,10 @@ def get_location(bot, update):
 	update.message.reply_text("This bot requires to know your location before continuing", reply_markup=reply_markup)
 
 def start(bot, update):
-	bot.send_message(chat_id=update.message.chat_id, text="This bot will help you find the nearest ATM to your location\n Type \help in order to get information about the commands")
+	bot.send_message(chat_id=update.message.chat_id, text="This bot will help you find the nearest ATM to your location\n Type /help in order to get information about the commands")
 
 def help(bot, update):
-	bot.send_message(chat_id=update.message.chat_id, text="Commands:\n \start - Get welcome message \n \link - Get nearest LINK ATMs \n \banelco - Get nearest BANELCO ATMs \n ""\n This bot only shows the 3 nearest ATMs within 500metre radius \n ""\n This bot requieres access to your location" )
+	bot.send_message(chat_id=update.message.chat_id, text="Commands:\n /start - Get welcome message \n /link - Get nearest LINK ATMs \n /banelco - Get nearest BANELCO ATMs \n ""\n This bot only shows the 3 nearest ATMs within 500metre radius \n ""\n This bot requieres access to your location" )
 
 def link_atms(bot, update, chat_data):
 	chat_data['red'] = 'LINK'
@@ -43,14 +43,18 @@ def banelco_atms(bot, update, chat_data):
 
 
 def location(bot, update, chat_data):
-	listOfAtms = getNearestAtms(update.message.location, chat_data['red'])
-	if len(listOfAtms) == 0:
-		bot.send_message(chat_id=update.message.chat_id, text="There are no nearby ATMs")
+	if not'red' in chat_data or chat_data['red']=='NONE':
+		bot.send_message(chat_id=update.message.chat_id, text="To get the nearest ATMs type /banelco or /link")
 	else:
-		msg = "Nearby " + chat_data['red'] + " ATMs \n"
-		msg += listOfAtms
-		bot.send_message(chat_id=update.message.chat_id, text=msg)
-
+		bankingNetwork = chat_data['red']
+		chat_data['red'] = 'NONE'
+		listOfAtms = getNearestAtms(update.message.location, bankingNetwork)
+		if len(listOfAtms) == 0:
+			bot.send_message(chat_id=update.message.chat_id, text="There are no nearby ATMs")
+		else:
+			msg = "Nearby " + chat_data['red'] + " ATMs \n"
+			msg += listOfAtms
+			bot.send_message(chat_id=update.message.chat_id, text=msg)
 
 	
 
