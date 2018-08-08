@@ -1,4 +1,5 @@
 import telegram
+import requests
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram import KeyboardButton
@@ -48,13 +49,17 @@ def location(bot, update, chat_data):
 	else:
 		bankingNetwork = chat_data['red']
 		chat_data['red'] = 'NONE'
-		listOfAtms = getNearestAtms(update.message.location, bankingNetwork)
+		msgAndURL = getNearestAtms(update.message.location, bankingNetwork)
+		listOfAtms = msgAndURL[0]
+		url = msgAndURL[1]
+		print (url)
 		if len(listOfAtms) == 0:
 			bot.send_message(chat_id=update.message.chat_id, text="There are no nearby ATMs")
 		else:
-			msg = "Nearby " + chat_data['red'] + " ATMs \n"
+			msg = "Nearby " + bankingNetwork + " ATMs \n"
 			msg += listOfAtms
 			bot.send_message(chat_id=update.message.chat_id, text=msg)
+			bot.send_photo(chat_id=update.message.chat_id, photo=url)
 
 	
 
@@ -69,11 +74,14 @@ dispatcher.add_handler(start_handler)
 link_handler = CommandHandler('link', link_atms, pass_chat_data=True)
 dispatcher.add_handler(link_handler)
 
+
 banelco_handler = CommandHandler('banelco', banelco_atms, pass_chat_data=True)
 dispatcher.add_handler(banelco_handler)
 
+
 help_handler = CommandHandler('help', help)
 dispatcher.add_handler(help_handler)
+
 
 unknown_handler = MessageHandler(Filters.command, unknown)
 dispatcher.add_handler(unknown_handler)
