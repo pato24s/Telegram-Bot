@@ -4,8 +4,15 @@ from math import sin, cos, sqrt, atan2, radians
 # approximate radius of earth in km
 R = 6373.0
 
-user_lat = -34.6061137952
-user_lon = -58.3711082913
+user_lat = -34.5700474
+user_lon = -58.4449395
+
+
+def getAllFromADataframeWithBankingNetwork(aDataFrame, aBankingNetwork):
+	return aDataFrame.loc[(aDataFrame.RED==aBankingNetwork)]
+
+
+
 
 
 def distanceXY(lat1, lon1, lat2, lon2):
@@ -17,22 +24,22 @@ def distanceXY(lat1, lon1, lat2, lon2):
 
 
 
-	print(lat1)
-	print(lon1)
-	print(lat2)
-	print(lon2)
+	# print(lat1)
+	# print(lon1)
+	# print(lat2)
+	# print(lon2)
 
 	dlon = lon2 - lon1
-	print(dlon)
+	# print(dlon)
 	dlat = lat2 - lat1
-	print(dlat)
+	# print(dlat)
 
 	a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
 	c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
-	print(c)
+	# print(c)
 	distance = (R * c)
-	print(distance)
+	# print(distance)
 	return distance
 
 
@@ -42,10 +49,20 @@ data=pd.read_csv('./data/cajeros-automaticos/cajeros-automaticos.csv', sep='	')
 
 df = pd.DataFrame(data)
 
-a = 34.2
-# print(a)
+distances = []
+for index, row in df.iterrows():
+	distances.append(distanceXY(user_lat, user_lon, row.LAT, row.LNG))
 
-banelco = df.loc[(df.RED=='BANELCO') & (distanceXY(df.LAT, df.LNG, user_lat, user_lon)==0)]
-link = df.loc[df['RED']=='LINK']
+newCol = pd.DataFrame({'distancias':distances})
 
-# print(banelco)
+df= df.join(newCol)
+
+
+
+banelco = getAllFromADataframeWithBankingNetwork(df,'BANELCO')
+
+link = getAllFromADataframeWithBankingNetwork(df, 'LINK')
+
+banelco.to_csv('banelco.csv')
+
+link.to_csv('link.csv')
