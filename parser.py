@@ -1,68 +1,49 @@
 import pandas as pd
-from math import sin, cos, sqrt, atan2, radians
+from haversine import haversine
 
-# approximate radius of earth in km
-R = 6373.0
-
-user_lat = -34.5700474
-user_lon = -58.4449395
 
 
 def getAllFromADataframeWithBankingNetwork(aDataFrame, aBankingNetwork):
 	return aDataFrame.loc[(aDataFrame.RED==aBankingNetwork)]
 
 
+def getNearestAtms(aLocation, aBankingNetwork):
+	user_lat = aLocation.latitude
+	user_lon = aLocation.longitude
+
+	user_location = (user_lat, user_lon)
+
+	data=pd.read_csv('./data/cajeros-automaticos/cajeros-automaticos.csv', sep='	')
+
+	df = pd.DataFrame(data)
+	
+	distances = []
+	
+	for index, row in df.iterrows():
+		atm_location = (row.LAT, row.LNG)
+		distances.append(haversine(atm_location, user_location)*1000)
+
+	newCol = pd.DataFrame({'DISTANCIA':distances})
+
+	df= df.join(newCol)
+
+	filtered_by_network_df = getAllFromADataframeWithBankingNetwork(df,aBankingNetwork)
+
+	sorted_by_distance_df = filtered_by_network_df.sort_values(by='DISTANCIA', ascending=True)
+
+	final_df = sorted_by_distance_df.head(3)
+
+	final_df = final_df.loc[final_df.DISTANCIA < 500]
+
+	atms_banks = final_df['BANCO'].tolist()
+
+	atms_addresses = final_df['DOM_NORMA'].tolist()
+
+	res = ""
+
+	for idx in range(0,len(atms_banks)):
+		res = res + str(idx+1) + ". " + atms_banks[idx] + " - " + atms_addresses[idx] + "\n" 
 
 
 
-def distanceXY(lat1, lon1, lat2, lon2):
-	global R
-	# lat1 = aPairOfCoordiantes[0]
-	# lon1 = aPairOfCoordiantes[1]
-	# lat2 = anotherPairOfCoordinates[0]
-	# lon2 = anotherPairOfCoordinates[1]
-
-
-
-	# print(lat1)
-	# print(lon1)
-	# print(lat2)
-	# print(lon2)
-
-	dlon = lon2 - lon1
-	# print(dlon)
-	dlat = lat2 - lat1
-	# print(dlat)
-
-	a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
-	c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-	# print(c)
-	distance = (R * c)
-	# print(distance)
-	return distance
-
-
-
-data=pd.read_csv('./data/cajeros-automaticos/cajeros-automaticos.csv', sep='	')
-# print (data)
-
-df = pd.DataFrame(data)
-
-distances = []
-for index, row in df.iterrows():
-	distances.append(distanceXY(user_lat, user_lon, row.LAT, row.LNG))
-
-newCol = pd.DataFrame({'distancias':distances})
-
-df= df.join(newCol)
-
-
-
-banelco = getAllFromADataframeWithBankingNetwork(df,'BANELCO')
-
-link = getAllFromADataframeWithBankingNetwork(df, 'LINK')
-
-banelco.to_csv('banelco.csv')
-
-link.to_csv('link.csv')
+	return res
